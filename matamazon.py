@@ -1,101 +1,146 @@
 # TODO add all imports needed here
 
+ZERO = 0 #avoiding "magic" numbers (whatever that means...)
+
+class InvalidIdException(Exception):
+    
+    def ___init__(self, invalid_id):
+        self.invalid_id = invalid_id
+        super().__init__(f"InvalidIdException: {invalid_id}") #accesing parent class implementation
+                                                                #(the built-in class "Exception") with super()
+
+
+def _is_valid_non_negative_int(value):
+    # only for non-negative integer (excluding bool, which is an int subclass)
+    return isinstance(value, int) and not isinstance(value, bool) and value >= ZERO
+
+
+class InvalidPriceException(Exception):
+    #when price is not valid non-negative number
+    def __init__(self, invalid_price):
+        self.invalid_price = invalid_price
+        super().__init__(f"InvalidPriceException: {invalid_price}")
+
+def _is_valid_non_negative_real(value):
+    #allowing int/float, not allowing bool
+    return (isinstance(value, (int, float))
+        and not isinstance(value,bool)
+        and value >= ZERO)
+
+    
+
 class Customer:
     """
     Represents a customer in the Matamazon system.
-
-    Required fields (per specification):
-        - id (int): Unique non-negative integer identifier.
-        - name (str): Customer name.
-        - city (str): Customer city.
-        - address (str): Customer shipping address.
-
-    Exceptions:
-        InvalidIdException: If 'id' is not valid according to the specification.
-
-    Printing:
-        Must support printing in the following format (example):
-            Customer(id=42, name='Daniel Elgarici', city='Karmiel, address='123 Main Street')
-        Exact formatting requirements appear in the assignment PDF.
     """
 
-    # TODO implement this class as instructed
-    pass
+    def __init__(self, id, name, city, address):
+        if not _is_valid_non_negative_int(id):
+            raise InvalidIdException(id)
+
+
+        self.id = id
+        self.name = name
+        self.city = city
+        self.address = address
+
+    def __str__(self):
+        return (
+            f"Customer(id={self.id}, name='{self.name}', "
+            f"city='{self.city}',a ddress = '{self.adress}')"
+        )
+    
+    def __repr__(self): #__repr__ represents as string, regardless of type
+        return str(self)
 
 
 class Supplier:
     """
     Represents a supplier in the Matamazon system.
-
-    Required fields (per specification):
-        - id (int): Unique non-negative integer identifier.
-        - name (str): Supplier name.
-        - city (str): Warehouse city (origin city for shipping).
-        - address (str): Warehouse address.
-
-    Exceptions:
-        InvalidIdException: If 'id' is not valid according to the specification.
-
-    Printing:
-        Must support printing in the following format (example):
-            Supplier(id=42, name='Yinon Goldshtein', city='Haifa, address='32 David Rose Street')
     """
 
-    # TODO implement this class as instructed
-    pass
+    def __init__(self, id, name, city, address):
+        if not _is_valid_non_negative_int(id):
+            raise InvalidIdException(id)
+        
+        self.id = id
+        self.name = name
+        self.city = city
+        self.address = address
+
+
+    def __str__(self):
+        return (
+            f"Supplier(id={self.id}, name='{self.name}', "
+            f"city='{self.city}', adress='{self.adress}')"
+        )
+    
+    def __repr__(self):
+        return str(self)
 
 
 class Product:
     """
     Represents a product sold on the Matamazon website.
-
-    Required fields (per specification):
-        - id (int): Unique non-negative integer identifier.
-        - name (str): Product name.
-        - price (float): Non-negative price.
-        - supplier_id (int): ID of the supplier that provides the product.
-        - quantity (int): Non-negative quantity in stock.
-
-    Exceptions:
-        InvalidIdException:
-            - If id/supplier_id/quantity is invalid per specification.
-        InvalidPriceException:
-            - If price is invalid (e.g., negative).
-
-    Printing:
-        Must support printing in the following format (example):
-            Product(id=101, name='Harry Potter Cushion', price=29.99, supplier_id=42, quantity=555)
     """
 
-    # TODO implement this class as instructed
-    pass
+    def __init__(self,id, name, price, supplier_id, quantity):
+        if not _is_valid_non_negative_int(id):
+            raise InvalidIdException(id)
+        if not _is_valid_non_negative_int(supplier_id):
+            raise InvalidIdException(supplier_id)
+        if not _is_valid_non_negative_int(quantity):
+            raise InvalidIdException(quantity)
+        if not _is_valid_non_negative_real(price):
+            raise InvalidPriceException(price)
+        
+        self.id = id
+        self.name = name
+        self.price = price
+        self.supplier_id = supplier_id
+        self.quantity = quantity
 
+def __str__(self):
+    return (
+        f"Product({self.id}, name='{self.name}', price={self.price}, "
+        f"supplier_id={self.supplier_id}, quantity={self.quantity}"
+    )
+
+def __repr__(self):
+    return str(self)
 
 class Order:
     """
     Represents a placed order.
-
-    Required fields (per specification):
-        - id (int): Unique non-negative integer identifier (assigned by the system).
-        - customer_id (int): ID of the customer who placed the order.
-        - product_id (int): ID of the ordered product.
-        - quantity (int): Ordered quantity (non-negative integer).
-        - total_price (float): Total price for the order (non-negative).
-
-    Exceptions:
-        InvalidIdException:
-            - If one of the ID fields is invalid.
-        InvalidPriceException:
-            - If total_price is invalid.
-
-    Printing:
-        Must support printing in the following format (example):
-            Order(id=1, customer_id=42, product_id=101, quantity=10, total_price=299.9)
-
     """
 
-    # TODO implement this class as instructed
-    pass
+    def __init__(self, id, customer_id, product_id, quantity, total_price):
+        if not _is_valid_non_negative_int(id):
+            raise InvalidIdException(id)
+        if not _is_valid_non_negative_int(customer_id):
+            raise InvalidIdException(customer_id)
+        if not _is_valid_non_negative_int(product_id):
+            raise InvalidIdException(product_id)
+        if not _is_valid_non_negative_int(quantity):
+            raise InvalidIdException(quantity)
+        if not _is_valid_non_negative_real(total_price):
+            raise InvalidPriceException(total_price)
+    
+        self.id = id
+        self.customer_id = customer_id
+        self.product_id = product_id
+        self.quantity = quantity
+        self.total_price = total_price
+
+    def __str__(self):
+        return (
+            f"Order(id={self.id}, customer_id={self.customer_id}, "
+            f"product_id={self.product_id}, quantity={self.quantity}, "
+            f"total_price={self.total_price})"
+    )
+    
+    def __repr__(self):
+        return str(self)
 
 
 class MatamazonSystem:
