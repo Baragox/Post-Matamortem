@@ -1,5 +1,9 @@
 
 import json
+import argparse
+import sys
+
+
 
 ZERO = 0 #avoiding "magic" numbers (whatever that means...)
 ONE = 1
@@ -7,6 +11,8 @@ ONE = 1
 SUCCESS_ORDER_MSG = "The order has been accepted in the system"
 NO_PRODUCT_MSG = "The product does not exist in the system"
 NOT_ENOUGH_STOCK_MSG = "The quantity requested for this product is greater than the quantity in stock"
+USAGE_LINE = "Usage: python3 matamazon.py -l < matamazon_log > -s < matamazon_system > -o <output_file> -os <out_matamazon_system>"
+ERROR_LINE = "The matamazon script has encountered an error"
 
 class InvalidIdException(Exception):
     
@@ -165,24 +171,23 @@ class MatamazonSystem:
         self.orders = {} # id -> Order 
         self._next_order_id = ONE 
 
-
     def register_entity(self, entity, is_customer):
         """
         Register a Customer or Supplier in the system.
         """
         if not hasattr(entity, "id") or not _is_valid_non_negative_int(entity.id):
-            raise InvalidIdException(getattr(entity, "id",  None))  #using getattr to get the obj.name
-
-
-        if entity.id in self.customers or entity.id in self.suppliers:
-            raise InvalidIdException(entity.id)
-        #registration shares the same ID space as customers and suppliers
-
+            raise InvalidIdException(getattr(entity, "id", None)) #using getattr to get the obj.name
 
         if is_customer:
+            if entity.id in self.customers:
+                raise InvalidIdException(entity.id)
             self.customers[entity.id] = entity
         else:
+            if entity.id in self.suppliers:
+                raise InvalidIdException(entity.id)
             self.suppliers[entity.id] = entity
+    #registration shares the same ID space as customers and suppliers
+
 
 
     def add_or_update_product(self, product):
@@ -379,8 +384,7 @@ class MatamazonSystem:
                                                         # then create a grouped[city] = [] and return it to the new lsit
                                                         #then also add the order string to the last with append().
 
-        json.dump(grouped, out_file)
-
+        out_file.write(json.dumps(grouped))
 
 
 
@@ -434,3 +438,154 @@ def load_system_from_file(path):
 
 
     return system
+
+
+
+
+
+#-----------SCRIPT-----------# 
+
+
+
+
+
+def _usage_exit():
+    print(USAGE_LINE)
+    raise SystemExit(1)
+
+
+class _ArgParser(argparse.ArgumentParser):
+    def error(self, message):
+        _usage_exit() #argparse print exactly the required usage line, and then exits
+
+def _decode_text_token(token):
+    return token.replace("/", " ").replace("_", " ") #in log the string can appear as word1/word2/word3
+
+def _execute_log_line(system, line):
+    line = line.strip() # ignoring empty lines (or comment lines)
+    if not line or line.startswith("#"):
+        return
+    
+    parts = line.split()
+    cmd = parts[0].lower()
+
+    if cmd == "register": #register should be <customer/supplier> <id> <name> <city> <address>
+
+        if len(parts) != 6:
+            raise ValueError("Bad register line")
+        who = parts[1].lower()
+        _id = int(parts[2])
+        name = _decode_text_token(parts[3])
+        city = _decode_text_token(parts[4])
+        address = _decode_text_token(parts[5])
+
+
+        if who == "customer":
+            entity = Customer(_id, name, city, address)
+            system.register_entity(entity, True)
+        elif who == "supplier":
+            entity = Supplier(_id, name, city, address)
+            system.register_entity(entity, False)
+        else:
+            raise ValueError("Bad register type")
+        
+    elif cmd in ("add", "update"): #for adding (or updating) the: <id> <name> <price> <supplier_id> <quantity>
+        if len(parts) != 6:
+            raise ValueError("Bad add/update line")
+        pid = int(parts[1])
+        name = _decode_text_token(parts[2])
+        price = float(parts[3])
+        supplier_id = int(parts[4])
+        quantity = int(parts[5])
+
+
+        product = Product(pid, name, price, supplier_id, quantity)
+        system.add_or_update_product(product)        #add/updated are from the same method
+
+
+    elif cmd == "order": #order <customer_id> <product_id> <?quantity?>
+        if len(parts) not in (3,4):
+            raise ValueError("Bad order line")
+        customer_id = int(parts[1])
+        product_id = int(parts[2])
+        quantity = int(parts[3]) if len(parts) == 4 else ONE #script assumes default quantity is 1
+
+
+        system.place_order(customer_id, product_id, quantity)
+
+
+    elif cmd == "remove": #remove <class_type> <id>
+        if len(parts) !=3:
+            raise ValueError("Bad remove line")
+        class_type = parts[1].capitalize()
+        _id = int(parts[2])
+        system.remove_object(_id, class_type)
+
+
+    elif cmd == "search": # search <query> <?max_price?>
+        if len(parts) not in (2,3):
+            raise ValueError("Bad search line")
+        query = _decode_text_token(parts[1])
+        max_price = float(parts[2]) if len(parts) == 3 else None
+        res = system.search_products(query, max_price)
+
+        print(res)
+
+
+    else:
+        raise ValueError("Unknown command")
+    
+
+
+def _main():
+
+        #because duplication is not allowed, i'd assume
+    for f in ("-l", "-s", "-o", "-os"):
+        if sys.argv.count(f) > 1:
+            _usage_exit()
+
+
+    parser = _ArgParser(add_help=False)
+    parser.add_argument("-l", dest="log_path", required=True)
+    parser.add_argument("-s", dest="system_path", required=False)
+    parser.add_argument("-o", dest="orders_out_path", required=False)
+    parser.add_argument("-os", dest="system_out_path", required=False)
+
+
+    args, extras = parser.parse_known_args()
+    if extras:
+        _usage_exit()
+
+    try:
+        if args.system_path is None:
+            system = MatamazonSystem()
+        else:
+            system = load_system_from_file(args.system_path)
+
+        with open(args.log_path, "r", encoding="utf-8") as log_f:
+            for line in log_f:
+                _execute_log_line(system, line)
+
+        if args.orders_out_path is None: #exporting the orders in JSON (to file if -o, else to screen)
+            system.export_orders(sys.stdout)
+            print()
+        else:
+            with open(args.orders_out_path, "w", encoding="utf-8") as out_f:
+                system.export_orders(out_f) 
+
+
+        if args.system_out_path is not None:
+            system.export_system_to_file(args.system_out_path)    
+
+    except OSError: #bad file paths (or simply cannot open) -> usage + exit(1)
+        print(ERROR_LINE)
+        raise SystemExit(1)
+
+    except Exception: # any runtime/logic error during run 
+            print(ERROR_LINE)
+            raise SystemExit(1)
+        
+
+if __name__ == "__main__":
+    _main()
+    
