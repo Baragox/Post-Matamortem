@@ -57,7 +57,10 @@ class Customer:
         self.address = address
 
     def __str__(self):
-        return f"Customer(id={self.id}, name={self.name!r}, city={self.city!r}, address={self.address!r})"
+        return (
+            f"Customer(id={self.id}, name='{self.name}', "
+            f"city='{self.city}', address='{self.address}')"
+        )
     
     def __repr__(self): #__repr__ represents as string, regardless of type
         return str(self)
@@ -79,7 +82,10 @@ class Supplier:
 
 
     def __str__(self):
-        return f"Supplier(id={self.id}, name={self.name!r}, city={self.city!r}, address={self.address!r})"
+        return (
+            f"Supplier(id={self.id}, name='{self.name}', "
+            f"city='{self.city}', address='{self.address}')"
+        )
     
     def __repr__(self):
         return str(self)
@@ -107,7 +113,10 @@ class Product:
         self.quantity = quantity
 
     def __str__(self):
-        return f"Product(id={self.id}, name={self.name!r}, price={self.price}, supplier_id={self.supplier_id}, quantity={self.quantity})"
+        return (
+        f"Product(id={self.id}, name='{self.name}', price={self.price}, "
+        f"supplier_id={self.supplier_id}, quantity={self.quantity})"
+    )
 
     def __repr__(self):
         return str(self)
@@ -406,7 +415,7 @@ def load_system_from_file(path):
 
             try:
                 obj = eval(line, allowed_names)
-            except (SyntaxError, NameError, TypeError, ValueError, InvalidIdException, InvalidPriceException):
+            except (SyntaxError,NameError,TypeError,ValueError):
                 continue #ignore it if its in an unvalid format
                 # also, any InvalidIdException/InvalidPriceException will not be caught
 
@@ -440,13 +449,14 @@ def load_system_from_file(path):
 
 
 
-def _usage_exit(code=1):
+def _usage_exit():
     print(USAGE_LINE)
-    raise SystemExit(code)
+    raise SystemExit(0)
+
 
 class _ArgParser(argparse.ArgumentParser):
     def error(self, message):
-        _usage_exit(1) #argparse print exactly the required usage line, and then exits
+        _usage_exit() #argparse print exactly the required usage line, and then exits
 
 def _decode_text_token(token):
     return token.replace("/", " ").replace("_", " ") #in log the string can appear as word1/word2/word3
@@ -528,13 +538,12 @@ def _execute_log_line(system, line):
 
 
 def _main():
-    #help should be success exit
-    if any(arg in ("-h", "--help") for arg in sys.argv[1:]):
-        _usage_exit(0)
 
+        #because duplication is not allowed, i'd assume
     for f in ("-l", "-s", "-o", "-os"):
         if sys.argv.count(f) > 1:
-            _usage_exit(1)
+            _usage_exit()
+
 
     parser = _ArgParser(add_help=False)
     parser.add_argument("-l", dest="log_path", required=True)
@@ -570,11 +579,11 @@ def _main():
 
     except OSError: #bad file paths (or simply cannot open) -> usage + exit(1)
         print(ERROR_LINE)
-        raise SystemExit(1)
+        raise SystemExit(0)
 
     except Exception: # any runtime/logic error during run 
             print(ERROR_LINE)
-            raise SystemExit(1)
+            raise SystemExit(0)
         
 
 if __name__ == "__main__":
