@@ -440,14 +440,13 @@ def load_system_from_file(path):
 
 
 
-def _usage_exit():
+def _usage_exit(code=1):
     print(USAGE_LINE)
-    raise SystemExit(1)
-
+    raise SystemExit(code)
 
 class _ArgParser(argparse.ArgumentParser):
     def error(self, message):
-        _usage_exit() #argparse print exactly the required usage line, and then exits
+        _usage_exit(1) #argparse print exactly the required usage line, and then exits
 
 def _decode_text_token(token):
     return token.replace("/", " ").replace("_", " ") #in log the string can appear as word1/word2/word3
@@ -529,12 +528,13 @@ def _execute_log_line(system, line):
 
 
 def _main():
+    #help should be success exit
+    if any(arg in ("-h", "--help") for arg in sys.argv[1:]):
+        _usage_exit(0)
 
-        #because duplication is not allowed, i'd assume
     for f in ("-l", "-s", "-o", "-os"):
         if sys.argv.count(f) > 1:
-            _usage_exit()
-
+            _usage_exit(1)
 
     parser = _ArgParser(add_help=False)
     parser.add_argument("-l", dest="log_path", required=True)
