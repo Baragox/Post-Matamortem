@@ -57,10 +57,7 @@ class Customer:
         self.address = address
 
     def __str__(self):
-        return (
-            f"Customer(id={self.id}, name='{self.name}', "
-            f"city='{self.city}', address='{self.address}')"
-        )
+        return f"Customer(id={self.id}, name={self.name!r}, city={self.city!r}, address={self.address!r})"
     
     def __repr__(self): #__repr__ represents as string, regardless of type
         return str(self)
@@ -82,10 +79,7 @@ class Supplier:
 
 
     def __str__(self):
-        return (
-            f"Supplier(id={self.id}, name='{self.name}', "
-            f"city='{self.city}', address='{self.address}')"
-        )
+        return f"Supplier(id={self.id}, name={self.name!r}, city={self.city!r}, address={self.address!r})"
     
     def __repr__(self):
         return str(self)
@@ -113,10 +107,7 @@ class Product:
         self.quantity = quantity
 
     def __str__(self):
-        return (
-        f"Product(id={self.id}, name='{self.name}', price={self.price}, "
-        f"supplier_id={self.supplier_id}, quantity={self.quantity})"
-    )
+        return f"Product(id={self.id}, name={self.name!r}, price={self.price}, supplier_id={self.supplier_id}, quantity={self.quantity})"
 
     def __repr__(self):
         return str(self)
@@ -415,7 +406,7 @@ def load_system_from_file(path):
 
             try:
                 obj = eval(line, allowed_names)
-            except (SyntaxError,NameError,TypeError,ValueError):
+            except (SyntaxError, NameError, TypeError, ValueError, InvalidIdException, InvalidPriceException):
                 continue #ignore it if its in an unvalid format
                 # also, any InvalidIdException/InvalidPriceException will not be caught
 
